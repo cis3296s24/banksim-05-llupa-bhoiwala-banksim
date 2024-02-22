@@ -27,18 +27,22 @@ public class Bank {
     }
 
     public void transfer(int from, int to, int amount) {
-        if (accounts[from].withdraw(amount)) {
-            accounts[to].deposit(amount);
-        }
-        
+
+            if (accounts[from].withdraw(amount)) {
+                accounts[to].deposit(amount);
+            }
+       // }
+
         // Uncomment line when ready to start Task 3.
-        // if (shouldTest()) test();
+         if (shouldTest()){
+             test();
+         }
     }
 
     public void test() {
         int totalBalance = 0;
         for (Account account : accounts) {
-            System.out.printf("%-30s %s%n", 
+            System.out.printf("%-30s %s%n",
                     Thread.currentThread().toString(), account.toString());
             totalBalance += account.getBalance();
         }
@@ -54,8 +58,8 @@ public class Bank {
     public int getNumAccounts() {
         return numAccounts;
     }
-    
-    
+
+
     public boolean shouldTest() {
         return ++numTransactions % NTEST == 0;
     }
