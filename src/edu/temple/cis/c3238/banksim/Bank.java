@@ -28,15 +28,18 @@ public class Bank {
 
     public void transfer(int from, int to, int amount) {
 
-            if (accounts[from].withdraw(amount)) {
+            if (!accounts[from].withdraw(amount)) {
+                return;
+            }
+            else {
                 accounts[to].deposit(amount);
             }
        // }
 
         // Uncomment line when ready to start Task 3.
-         if (shouldTest()){
-             test();
-         }
+//         if (shouldTest()){
+//             test();
+//         }
     }
 
     public void test() {
