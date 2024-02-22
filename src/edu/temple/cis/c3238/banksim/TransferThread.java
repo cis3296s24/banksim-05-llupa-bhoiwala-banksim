@@ -20,8 +20,13 @@ class TransferThread extends Thread {
 
     @Override
     public void run() {
-        for (int i = 0; i < 10000; i++) {
+        for (int i = 0; i < 10; i++) {
+
             int toAccount = (int) (bank.getNumAccounts() * Math.random());
+            //should this exclude the fromAccount from the above
+            while (toAccount == fromAccount) { // Ensure different accounts
+                toAccount = (int) (bank.getNumAccounts() * Math.random());
+            }
             int amount = (int) (maxAmount * Math.random());
             bank.transfer(fromAccount, toAccount, amount);
         }
