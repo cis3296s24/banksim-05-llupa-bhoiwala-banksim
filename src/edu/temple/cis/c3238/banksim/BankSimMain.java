@@ -15,6 +15,10 @@ public class BankSimMain {
     public static void main(String[] args) throws InterruptedException {
         Bank b = new Bank(NACCOUNTS, INITIAL_BALANCE);
         Thread[] threads = new Thread[NACCOUNTS];
+        TestThread testThread = new TestThread(b);
+
+        //start test thread
+        testThread.start();
 
         // Start a thread for each account.
         for (int i = 0; i < NACCOUNTS; i++) {
@@ -27,6 +31,10 @@ public class BankSimMain {
         for(Thread thread : threads) {
             thread.join();
         }
+
+        // Once all transfers are done, stop the test thread.
+        testThread.shutdown();
+        testThread.join();
 
         // Test to see whether the balances have remained the same
         // After all transactions have completed.
