@@ -32,6 +32,7 @@ public class BankSimMain {
             thread.join();
         }
 
+
         // Once all transfers are done, stop the test thread.
         testThread.shutdown();
         testThread.join();
