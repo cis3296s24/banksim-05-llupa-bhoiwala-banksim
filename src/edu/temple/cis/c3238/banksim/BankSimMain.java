@@ -15,7 +15,7 @@ public class BankSimMain {
     public static void main(String[] args) throws InterruptedException {
         Bank b = new Bank(NACCOUNTS, INITIAL_BALANCE);
         Thread[] threads = new Thread[NACCOUNTS];
-        TestThread testThread = new TestThread(b);
+        TestThread testThread = new TestThread(b, 1000);
 
         //start test thread
         testThread.start();
