@@ -1,5 +1,9 @@
 package edu.temple.cis.c3238.banksim;
 
+import javax.swing.plaf.TableHeaderUI;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
 /**
  * @author Cay Horstmann
  * @author Modified by Paul Wolfgang
@@ -9,7 +13,11 @@ package edu.temple.cis.c3238.banksim;
  */
 
 public class Bank {
-
+    private final ReentrantLock bankLock = new ReentrantLock();
+    private final Condition canTransfer = bankLock.newCondition();
+    private final Condition canTest = bankLock.newCondition();
+    private int activeTransfers = 0;
+    private boolean isTesting = false;
     public static final int NTEST = 10;
     private final Account[] accounts;
     private long numTransactions = 0;
@@ -27,13 +35,17 @@ public class Bank {
     }
 
     public void transfer(int from, int to, int amount) {
-
+        bankLock.lock();
+        try {
             if (!accounts[from].withdraw(amount)) {
                 return;
             }
-            else {
-                accounts[to].deposit(amount);
-            }
+            accounts[to].deposit(amount);
+        } finally {
+            bankLock.unlock();
+        }
+
+
        // }
 
         // Uncomment line when ready to start Task 3.
@@ -43,6 +55,7 @@ public class Bank {
     }
 
     public void test() {
+
         int totalBalance = 0;
         for (Account account : accounts) {
             System.out.printf("%-30s %s%n",
@@ -56,6 +69,7 @@ public class Bank {
         } else {
             System.out.printf("%-30s Total balance unchanged.\n", Thread.currentThread().toString());
         }
+
     }
 
     public int getNumAccounts() {
