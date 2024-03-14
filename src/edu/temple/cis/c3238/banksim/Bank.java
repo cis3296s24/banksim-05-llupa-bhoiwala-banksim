@@ -12,50 +12,90 @@ import java.util.concurrent.locks.ReentrantLock;
  * @author Modified by Tarek Elseify
  */
 
-public class Bank {
-    private final ReentrantLock bankLock = new ReentrantLock();
-    private final Condition canTransfer = bankLock.newCondition();
-    private final Condition canTest = bankLock.newCondition();
-    private int activeTransfers = 0;
-    private boolean isTesting = false;
+public class Bank extends Thread {
     public static final int NTEST = 10;
     private final Account[] accounts;
     private long numTransactions = 0;
     private final int initialBalance;
     private final int numAccounts;
+    private boolean open = true;
+    private boolean testing = false;
+    private int transfersInAction = 0;
+    private boolean bankLock = false;
 
     public Bank(int numAccounts, int initialBalance) {
         this.initialBalance = initialBalance;
         this.numAccounts = numAccounts;
         accounts = new Account[numAccounts];
         for (int i = 0; i < accounts.length; i++) {
-            accounts[i] = new Account(i, initialBalance);
+            accounts[i] = new Account(i, initialBalance, this);
         }
         numTransactions = 0;
     }
-
-    public void transfer(int from, int to, int amount) {
-        bankLock.lock();
-        try {
-            if (!accounts[from].withdraw(amount)) {
-                return;
+    synchronized boolean isOpen() {return open;}
+    public void closeBank() {
+        synchronized (this) {
+            while (transfersInAction > 0) {
+                try {
+                    this.wait();
+                } catch (InterruptedException ex) { /* ignore */ }
             }
-            accounts[to].deposit(amount);
-        } finally {
-            bankLock.unlock();
+        }
+        testing = true;
+        open = false;
+        for(Account account : accounts) {
+            synchronized (account) {
+                account.notifyAll();
+            }
+        }
+        System.out.println("Closing the bank");
+    }
+    public void transfer(int from, int to, int amount) {
+        if (!open) return;
+
+        accounts[from].waitForEnoughFund(amount);
+
+        synchronized (this) {
+            while(this.testing) {
+                try {
+                    this.wait();
+                } catch (InterruptedException ex) { /*ignore*/ }
+            }
         }
 
+        synchronized (this) {
+            transfersInAction++;
+        }
 
-       // }
+        //System.out.println("Wait over");
+        accounts[from].withdraw(amount);
+        accounts[to].deposit(amount);
 
-        // Uncomment line when ready to start Task 3.
-//         if (shouldTest()Ac){
-//             test();
-//         }
+        if (shouldTest()){
+            Thread testingThread = new TestThread(this);
+            testingThread.start();
+        }
+
+        synchronized (this) {
+            transfersInAction--;
+            if (transfersInAction == 0) {
+                // All transactions are complete, notify waiting threads
+                this.notifyAll();
+            }
+        }
+
     }
+    public synchronized void test() {
 
-    public void test() {
+        synchronized (this) {
+            while (transfersInAction > 0) {
+                try {
+                    this.wait();
+                } catch (InterruptedException ex) { /* ignore */ }
+            }
+        }
 
+        testing = true;
         int totalBalance = 0;
         for (Account account : accounts) {
             System.out.printf("%-30s %s%n",
@@ -69,8 +109,11 @@ public class Bank {
         } else {
             System.out.printf("%-30s Total balance unchanged.\n", Thread.currentThread().toString());
         }
-
+        testing = false;
+        this.notifyAll();
     }
+
+
 
     public int getNumAccounts() {
         return numAccounts;
