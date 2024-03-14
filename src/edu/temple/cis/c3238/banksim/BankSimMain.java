@@ -28,8 +28,6 @@ public class BankSimMain {
             thread.join();
         }
 
-
-
         // Test to see whether the balances have remained the same
         // After all transactions have completed.
         b.test();
