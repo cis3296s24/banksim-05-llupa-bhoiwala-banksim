@@ -17,15 +17,19 @@ class TransferThread extends Thread {
         fromAccount = from;
         maxAmount = max;
     }
-
+    //modified the run method so that if a thread is finished it breaks, closes the bank and
+    //sets AnyThreadFinished to true
     @Override
     public void run() {
         for (int i = 0; i < 1000; i++) {
-
+            if (!bank.isOpen() || Account.isAnyThreadFinished()) {
+                break;
+            }
             int toAccount = (int) (bank.getNumAccounts() * Math.random());
             int amount = (int) (maxAmount * Math.random());
             bank.transfer(fromAccount, toAccount, amount);
         }
+        Account.setAnyThreadFinished(true);
         bank.closeBank();
         System.out.printf("%-30s Account[%d] has finished with its transactions.\n", Thread.currentThread().toString(), fromAccount);
     }

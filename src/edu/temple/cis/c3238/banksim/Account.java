@@ -13,6 +13,8 @@ public class Account {
 
     private final int id;
     private Bank bank;
+
+    private static volatile boolean anyThreadFinished = false; //tracks if any thread has finished
     private boolean lockHeld = false;
 
 
@@ -27,42 +29,55 @@ public class Account {
     }
 
 
+    //Changed the withdraw method to return false if any thread has finished
     public synchronized boolean withdraw(int amount) {
-        if (bank.isOpen() && amount <= balance) {
-            int currentBalance = balance;
-//             Thread.yield(); // Try to force collision
-            int newBalance = currentBalance - amount;
-            balance = newBalance;
-            return true;
-        } else {
+        if (!bank.isOpen() || anyThreadFinished || amount > balance) {
             return false;
         }
-
+        int currentBalance = balance;
+//        Thread.yield(); // Try to force collision
+        int newBalance = currentBalance - amount;
+        balance = newBalance;
+        return true;
     }
 
+    //Changed the deposit method to return false if any thread has finished
     public synchronized void deposit(int amount) {
-        if(!bank.isOpen()){
+        if (!bank.isOpen() || anyThreadFinished) {
             return;
         }
         int currentBalance = balance;
-//         Thread.yield();   // Try to force collision
+//        Thread.yield(); // Try to force collision
         int newBalance = currentBalance + amount;
         balance = newBalance;
         notify();
     }
-    public synchronized  void waitForEnoughFund(int amount) {
-        if(!bank.isOpen()){
+
+
+    //Changed the waitForEnoughFund method to return if any thread has finished
+    public synchronized void waitForEnoughFund(int amount) {
+        if (!bank.isOpen() || anyThreadFinished) {
             return;
         }
-        while (bank.isOpen() && amount > this.balance) {
+        while (amount > this.balance) {
             try {
                 wait();
             } catch (InterruptedException ex) {
                 /* ignore */
             }
         }
-        lockHeld = false;
-        notifyAll();
+    }
+
+
+
+    //added a method that set the anyThreadFinished to true if a thread has finished
+    public static void setAnyThreadFinished(boolean value) {
+        anyThreadFinished = value;
+    }
+
+    //method that returns true if any thread is finished
+    public static boolean isAnyThreadFinished() {
+        return anyThreadFinished;
     }
 
 
